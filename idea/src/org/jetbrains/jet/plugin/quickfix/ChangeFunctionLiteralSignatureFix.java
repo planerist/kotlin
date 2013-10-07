@@ -22,14 +22,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetFunctionLiteral;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.jet.plugin.JetBundle;
+import org.jetbrains.jet.plugin.project.AnalyzerFacadeWithCache;
 import org.jetbrains.jet.plugin.refactoring.JetNameSuggester;
 import org.jetbrains.jet.plugin.refactoring.JetNameValidator;
-import org.jetbrains.jet.plugin.refactoring.changeSignature.JetFunctionPlatformDescriptorImpl;
+import org.jetbrains.jet.plugin.refactoring.changeSignature.JetChangeSignature;
+import org.jetbrains.jet.plugin.refactoring.changeSignature.JetChangeSignatureData;
 import org.jetbrains.jet.plugin.refactoring.changeSignature.JetParameterInfo;
 
 import java.util.List;
+
+import static org.jetbrains.jet.plugin.refactoring.changeSignature.JetChangeSignature.run;
 
 public class ChangeFunctionLiteralSignatureFix extends ChangeFunctionSignatureFix {
     private final List<JetType> parameterTypes;
@@ -49,16 +54,20 @@ public class ChangeFunctionLiteralSignatureFix extends ChangeFunctionSignatureFi
     }
 
     @Override
-    protected void invoke(@NotNull Project project, Editor editor, JetFile file) {
-        JetFunctionPlatformDescriptorImpl platformDescriptor = new JetFunctionPlatformDescriptorImpl(functionDescriptor, element);
-        JetNameValidator validator = JetNameValidator.getCollectingValidator(project);
-        platformDescriptor.clearParameters();
-
-        for (JetType type : parameterTypes) {
-            String name = JetNameSuggester.suggestNames(type, validator, "param")[0];
-            platformDescriptor.addParameter(new JetParameterInfo(name, type));
-        }
-
-        showDialog(project, platformDescriptor);
+    protected void invoke(@NotNull final Project project, Editor editor, JetFile file) {
+        BindingContext bindingContext = AnalyzerFacadeWithCache.analyzeFileWithCache(file).getBindingContext();
+        run(project, functionDescriptor, new JetChangeSignature.ChangeSignatureConfiguration() {
+            @Override
+            public void configure(
+                    @NotNull JetChangeSignatureData changeSignatureData, @NotNull BindingContext bindingContext
+            ) {
+                JetNameValidator validator = JetNameValidator.getCollectingValidator(project);
+                changeSignatureData.clearParameters();
+                for (JetType type : parameterTypes) {
+                    String name = JetNameSuggester.suggestNames(type, validator, "param")[0];
+                    changeSignatureData.addParameter(new JetParameterInfo(name, type));
+                }
+            }
+        }, bindingContext, context, getText(), false);
     }
 }
