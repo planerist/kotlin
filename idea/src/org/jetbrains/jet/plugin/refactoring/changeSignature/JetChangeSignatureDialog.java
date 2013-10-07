@@ -71,7 +71,7 @@ public class JetChangeSignatureDialog extends ChangeSignatureDialogBase<
         JetParameterInfo,
         PsiElement,
         Visibility,
-        JetFunctionPlatformDescriptor,
+        JetMethodDescriptor,
         ParameterTableModelItemBase<JetParameterInfo>,
         JetFunctionParameterTableModel
         >
@@ -79,12 +79,12 @@ public class JetChangeSignatureDialog extends ChangeSignatureDialogBase<
     private final JetGeneratedInfo generatedInfo = new JetGeneratedInfo();
     private final String commandName;
 
-    public JetChangeSignatureDialog(Project project, JetFunctionPlatformDescriptor descriptor, PsiElement context) {
-        this(project, descriptor, context, null);
+    public JetChangeSignatureDialog(Project project, @NotNull JetMethodDescriptor methodDescriptor, PsiElement context) {
+        this(project, methodDescriptor, context, null);
     }
 
-    public JetChangeSignatureDialog(Project project, JetFunctionPlatformDescriptor descriptor, PsiElement context, String commandName) {
-        super(project, descriptor, false, context);
+    public JetChangeSignatureDialog(Project project, @NotNull JetMethodDescriptor methodDescriptor, PsiElement context, String commandName) {
+        super(project, methodDescriptor, false, context);
         this.commandName = commandName;
     }
 
@@ -94,7 +94,7 @@ public class JetChangeSignatureDialog extends ChangeSignatureDialogBase<
     }
 
     @Override
-    protected JetFunctionParameterTableModel createParametersInfoModel(JetFunctionPlatformDescriptor descriptor) {
+    protected JetFunctionParameterTableModel createParametersInfoModel(JetMethodDescriptor descriptor) {
         if (descriptor.isConstructor())
             return new JetConstructorParameterTableModel(myDefaultValueContext);
         else
@@ -414,6 +414,7 @@ public class JetChangeSignatureDialog extends ChangeSignatureDialogBase<
 
         String returnTypeText = myReturnTypeCodeFragment != null ? myReturnTypeCodeFragment.getText().trim() : "";
         return new JetChangeInfo(myMethod, getMethodName(), getReturnType(), returnTypeText,
-                                 getVisibility(), parameters, myDefaultValueContext, generatedInfo);
+                                 getVisibility(), parameters, myDefaultValueContext, generatedInfo,
+                                 myMethod.getFunctionHierarchy());
     }
 }
