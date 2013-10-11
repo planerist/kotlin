@@ -143,6 +143,7 @@ public class TraceBasedJavaResolverCache implements JavaResolverCache {
 
     @Override
     public void recordPackage(@NotNull JavaElement element, @NotNull NamespaceDescriptor descriptor) {
-        trace.record(NAMESPACE, ((JavaElementImpl) element).getPsi(), descriptor);
+        // TODO 1
+        //trace.record(PACKAGE, ((JavaElementImpl) element).getPsi(), descriptor);
     }
 }

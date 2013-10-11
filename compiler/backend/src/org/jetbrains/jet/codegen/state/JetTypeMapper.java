@@ -109,7 +109,9 @@ public class JetTypeMapper extends BindingTraceAware {
     @NotNull
     private JavaNamespaceKind getNsKind(@NotNull NamespaceDescriptor ns) {
         JavaNamespaceKind javaNamespaceKind = bindingContext.get(JavaBindingContext.JAVA_NAMESPACE_KIND, ns);
-        Boolean src = bindingContext.get(BindingContext.NAMESPACE_IS_SRC, ns);
+        // TODO 2
+        Boolean src = null;
+        //Boolean src = bindingContext.get(BindingContext.NAMESPACE_IS_SRC, ns);
 
         if (javaNamespaceKind == null && src == null) {
             throw new IllegalStateException("unknown namespace origin: " + ns);

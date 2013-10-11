@@ -280,15 +280,16 @@ public class ReplInterpreter {
 
         scope.changeLockLevel(WritableScope.LockLevel.BOTH);
 
-        NamespaceDescriptorImpl rootNs = injector.getNamespaceFactory().createNamespaceDescriptorPathIfNeeded(FqName.ROOT);
-
-        // map "jet" namespace into KotlinBuiltIns
-        // @see DefaultModuleConfiguraiton#extendNamespaceScope
-        injector.getNamespaceFactory().createNamespaceDescriptorPathIfNeeded(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName());
-
-        // Import a scope that contains all top-level namespaces that come from dependencies
-        // This makes the namespaces visible at all, does not import themselves
-        scope.importScope(rootNs.getMemberScope());
+        // TODO 1
+        //NamespaceDescriptorImpl rootNs = injector.getNamespaceFactory().createNamespaceDescriptorPathIfNeeded(FqName.ROOT);
+        //
+        //// map "jet" namespace into KotlinBuiltIns
+        //// @see DefaultModuleConfiguraiton#extendNamespaceScope
+        //injector.getNamespaceFactory().createNamespaceDescriptorPathIfNeeded(KotlinBuiltIns.getInstance().getBuiltInsPackageFqName());
+        //
+        //// Import a scope that contains all top-level namespaces that come from dependencies
+        //// This makes the namespaces visible at all, does not import themselves
+        //scope.importScope(rootNs.getMemberScope());
 
         if (lastLineScope != null) {
             scope.importScope(lastLineScope);
@@ -298,7 +299,8 @@ public class ReplInterpreter {
 
         // dummy builder is used because "root" is module descriptor,
         // namespaces added to module explicitly in
-        injector.getTopDownAnalyzer().doProcess(scope, new NamespaceLikeBuilderDummy(), Collections.singletonList(psiFile));
+        injector.getTopDownAnalyzer().doProcess(module.getPackage(FqName.ROOT).getMemberScope(),
+                                                new NamespaceLikeBuilderDummy(), Collections.singletonList(psiFile));
 
         boolean hasErrors = AnalyzerWithCompilerReport.reportDiagnostics(trace.getBindingContext(), messageCollector);
         if (hasErrors) {

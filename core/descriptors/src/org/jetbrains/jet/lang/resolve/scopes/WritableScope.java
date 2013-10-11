@@ -55,6 +55,7 @@ public interface WritableScope extends JetScope {
 
     void addNamespace(@NotNull NamespaceDescriptor namespaceDescriptor);
 
+    @Deprecated
     @Nullable
     NamespaceDescriptor getDeclaredNamespace(@NotNull Name name);
 

@@ -132,7 +132,8 @@ public class BindingContextUtils {
     // NOTE this is used by KDoc
     @Nullable
     public static NamespaceDescriptor namespaceDescriptor(@NotNull BindingContext context, @NotNull JetFile source) {
-        return context.get(BindingContext.FILE_TO_NAMESPACE, source);
+        // TODO 1
+        return null;
     }
 
     @Nullable
