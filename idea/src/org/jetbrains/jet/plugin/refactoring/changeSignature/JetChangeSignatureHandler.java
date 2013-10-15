@@ -32,15 +32,13 @@ import com.intellij.refactoring.util.CommonRefactoringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
-import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.plugin.project.AnalyzerFacadeWithCache;
 import org.jetbrains.jet.plugin.refactoring.JetRefactoringBundle;
 
+import static org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor.Kind.SYNTHESIZED;
 import static org.jetbrains.jet.plugin.refactoring.changeSignature.JetChangeSignature.run;
 
 public class JetChangeSignatureHandler implements ChangeSignatureHandler {
@@ -182,6 +180,12 @@ public class JetChangeSignatureHandler implements ChangeSignatureHandler {
                     return null;
                 }
             }
+            if (((FunctionDescriptor) descriptor).getKind() == SYNTHESIZED) {
+                String message = JetRefactoringBundle.message("cannot.refactor.synthesized.function", descriptor.getName());
+                CommonRefactoringUtil.showErrorHint(project, editor, message, REFACTORING_NAME, HelpID.CHANGE_SIGNATURE);
+                return null;
+            }
+
 
             return (FunctionDescriptor) descriptor;
         }
