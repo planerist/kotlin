@@ -94,6 +94,11 @@ public class JetChangeSignatureTest extends LightCodeInsightTestCase {
         fail();
     }
 
+    public void testPreferContainedInClass() throws Exception {
+        JetChangeInfo changeInfo = getChangeInfo();
+        assertEquals("param", changeInfo.getNewParameters()[0].getName());
+    }
+
     public void testAddConstructorVisibility() throws Exception {
         JetChangeInfo changeInfo = getChangeInfo();
         changeInfo.setNewVisibility(Visibilities.PROTECTED);
@@ -230,7 +235,7 @@ public class JetChangeSignatureTest extends LightCodeInsightTestCase {
         FunctionDescriptor functionDescriptor = JetChangeSignatureHandler.findDescriptor(element, project, editor, bindingContext);
         assertNotNull(functionDescriptor);
         JetChangeSignatureDialog dialog = getDialog(project, functionDescriptor,
-                                                                   JetChangeSignatureHandler.getConfiguration(), bindingContext, context);
+                                                    JetChangeSignatureHandler.getConfiguration(), bindingContext, context);
         dialog.canRun();
         Disposer.register(getTestRootDisposable(), dialog.getDisposable());
         return dialog.evaluateChangeInfo();
