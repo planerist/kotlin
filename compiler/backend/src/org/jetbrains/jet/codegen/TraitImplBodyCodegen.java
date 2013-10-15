@@ -21,7 +21,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.codegen.context.ClassContext;
 import org.jetbrains.jet.codegen.state.GenerationState;
 import org.jetbrains.jet.codegen.state.JetTypeMapperMode;
+import org.jetbrains.jet.lang.descriptors.PropertyDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
+import org.jetbrains.jet.lang.psi.JetDeclaration;
+import org.jetbrains.jet.lang.psi.JetProperty;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 
 import static org.jetbrains.asm4.Opcodes.*;
 
@@ -47,6 +52,21 @@ public class TraitImplBodyCodegen extends ClassBodyCodegen {
                       new String[0]
         );
         v.visitSource(myClass.getContainingFile().getName(), null);
+    }
+
+    @Override
+    protected void generateSyntheticParts() {
+        generateSyntheticMethodsForAnnotatedProperties();
+    }
+
+    private void generateSyntheticMethodsForAnnotatedProperties() {
+        for (JetDeclaration declaration : myClass.getDeclarations()) {
+            if (declaration instanceof JetProperty) {
+                VariableDescriptor variable = bindingContext.get(BindingContext.VARIABLE, declaration);
+                assert variable instanceof PropertyDescriptor : "Variable in trait should be a property: " + variable;
+                PropertyCodegen.generateSyntheticMethodForAnnotatedPropertyIfNeeded(v, typeMapper, (PropertyDescriptor) variable);
+            }
+        }
     }
 
     @NotNull
