@@ -198,8 +198,8 @@ public final class JavaFunctionResolver {
             }
         }
 
-        if (owner instanceof NamespaceDescriptor) {
-            SamConstructorDescriptor samConstructor = resolveSamConstructor((NamespaceDescriptor) owner, members);
+        if (owner instanceof PackageFragmentDescriptor) {
+            SamConstructorDescriptor samConstructor = resolveSamConstructor((PackageFragmentDescriptor) owner, members);
             if (samConstructor != null) {
                 functionsFromCurrent.add(samConstructor);
             }
@@ -244,30 +244,31 @@ public final class JavaFunctionResolver {
     // +-- namespace Bar
     // We need to find class 'Baz' in namespace 'foo.Bar'.
     @Nullable
-    private static ClassDescriptorFromJvmBytecode findClassInNamespace(@NotNull NamespaceDescriptor namespace, @NotNull Name name) {
-        // First, try to find in namespace directly
-        ClassDescriptorFromJvmBytecode found = findClassInScope(namespace.getMemberScope(), name);
-        if (found != null) {
-            return found;
-        }
-
-        // If unsuccessful, try to find class of the same name as current (class 'foo.Bar')
-        NamespaceDescriptorParent parent = namespace.getContainingDeclaration();
-        if (parent instanceof NamespaceDescriptor) {
-            // Calling recursively, looking for 'Bar' in 'foo'
-            ClassDescriptor classForCurrentNamespace = findClassInNamespace((NamespaceDescriptor) parent, namespace.getName());
-            if (classForCurrentNamespace == null) {
-                return null;
-            }
-
-            // Try to find nested class 'Baz' in class 'foo.Bar'
-            return findClassInScope(DescriptorUtils.getStaticNestedClassesScope(classForCurrentNamespace), name);
-        }
+    private static ClassDescriptorFromJvmBytecode findClassInNamespace(@NotNull PackageFragmentDescriptor namespace, @NotNull Name name) {
+        // TODO 1 restore
+        //// First, try to find in namespace directly
+        //ClassDescriptorFromJvmBytecode found = findClassInScope(namespace.getMemberScope(), name);
+        //if (found != null) {
+        //    return found;
+        //}
+        //
+        //// If unsuccessful, try to find class of the same name as current (class 'foo.Bar')
+        //NamespaceDescriptorParent parent = namespace.getContainingDeclaration();
+        //if (parent instanceof NamespaceDescriptor) {
+        //    // Calling recursively, looking for 'Bar' in 'foo'
+        //    ClassDescriptor classForCurrentNamespace = findClassInNamespace((NamespaceDescriptor) parent, namespace.getName());
+        //    if (classForCurrentNamespace == null) {
+        //        return null;
+        //    }
+        //
+        //    // Try to find nested class 'Baz' in class 'foo.Bar'
+        //    return findClassInScope(DescriptorUtils.getStaticNestedClassesScope(classForCurrentNamespace), name);
+        //}
         return null;
     }
 
     @Nullable
-    public static SamConstructorDescriptor resolveSamConstructor(@NotNull NamespaceDescriptor owner, @NotNull NamedMembers namedMembers) {
+    public static SamConstructorDescriptor resolveSamConstructor(@NotNull PackageFragmentDescriptor owner, @NotNull NamedMembers namedMembers) {
         if (namedMembers.getSamInterface() != null) {
             ClassDescriptorFromJvmBytecode klass = findClassInNamespace(owner, namedMembers.getName());
             if (klass != null) {

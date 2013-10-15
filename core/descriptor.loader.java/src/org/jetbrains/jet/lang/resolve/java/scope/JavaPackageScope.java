@@ -43,7 +43,7 @@ public final class JavaPackageScope extends JavaBaseScope {
     private final FqName packageFQN;
 
     public JavaPackageScope(
-            @NotNull NamespaceDescriptor descriptor,
+            @NotNull PackageFragmentDescriptor descriptor,
             @NotNull JavaPackage javaPackage,
             @NotNull FqName packageFQN,
             @NotNull JavaMemberResolver memberResolver
@@ -71,14 +71,7 @@ public final class JavaPackageScope extends JavaBaseScope {
         return null;
     }
 
-    @NotNull
-    @Override
-    protected Collection<DeclarationDescriptor> computeAllDescriptors() {
-        Collection<DeclarationDescriptor> result = super.computeAllDescriptors();
-        result.addAll(computeAllPackageDeclarations());
-        return result;
-    }
-
+    // TODO 1 move to package fragment provider
     @NotNull
     private Collection<DeclarationDescriptor> computeAllPackageDeclarations() {
         Collection<DeclarationDescriptor> result = new HashSet<DeclarationDescriptor>();
@@ -123,7 +116,7 @@ public final class JavaPackageScope extends JavaBaseScope {
         if (members == null) {
             return Collections.emptySet();
         }
-        SamConstructorDescriptor samConstructor = JavaFunctionResolver.resolveSamConstructor((NamespaceDescriptor) descriptor, members);
+        SamConstructorDescriptor samConstructor = JavaFunctionResolver.resolveSamConstructor((PackageFragmentDescriptor) descriptor, members);
         if (samConstructor == null) {
             return Collections.emptySet();
         }

@@ -17,10 +17,7 @@
 package org.jetbrains.jet.lang.resolve.java.scope;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
-import org.jetbrains.jet.lang.descriptors.PackageViewDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.java.resolver.JavaMemberResolver;
 import org.jetbrains.jet.lang.resolve.java.structure.JavaClass;
 import org.jetbrains.jet.lang.resolve.name.FqName;
@@ -33,18 +30,14 @@ import static org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule.INCLUDE_K
 
 public final class JavaClassStaticMembersScope extends JavaClassMembersScope {
     @NotNull
-    private final FqName packageFQN;
-    @NotNull
     private final JavaClass javaClass;
 
     public JavaClassStaticMembersScope(
-            @NotNull NamespaceDescriptor descriptor,
-            @NotNull FqName packageFQN,
+            @NotNull PackageFragmentDescriptor descriptor,
             @NotNull JavaClass javaClass,
             @NotNull JavaMemberResolver memberResolver
     ) {
         super(descriptor, MembersProvider.forClass(javaClass, true), memberResolver);
-        this.packageFQN = packageFQN;
         this.javaClass = javaClass;
     }
 

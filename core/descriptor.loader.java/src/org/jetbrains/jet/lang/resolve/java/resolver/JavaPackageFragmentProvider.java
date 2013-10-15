@@ -18,12 +18,8 @@ package org.jetbrains.jet.lang.resolve.java.resolver;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptor;
-import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
-import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.descriptors.annotations.AnnotationDescriptor;
-import org.jetbrains.jet.lang.descriptors.impl.NamespaceDescriptorParent;
-import org.jetbrains.jet.lang.resolve.DescriptorUtils;
 import org.jetbrains.jet.lang.resolve.java.*;
 import org.jetbrains.jet.lang.resolve.java.descriptor.JavaNamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.mapping.JavaToKotlinClassMap;
@@ -44,16 +40,14 @@ import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import javax.inject.Inject;
 import java.util.*;
 
-import static org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule.INCLUDE_KOTLIN_SOURCES;
-
-public final class JavaNamespaceResolver {
+public final class JavaPackageFragmentProvider implements PackageFragmentProvider {
 
     @NotNull
     public static final ModuleDescriptor FAKE_ROOT_MODULE = new ModuleDescriptorImpl(JavaDescriptorResolver.JAVA_ROOT,
                                                                                      JavaBridgeConfiguration.ALL_JAVA_IMPORTS,
                                                                                      JavaToKotlinClassMap.getInstance());
     @NotNull
-    private final Map<FqName, JetScope> resolvedNamespaceCache = new HashMap<FqName, JetScope>();
+    private final Map<FqName, JetScope> packageFragments = new HashMap<FqName, JetScope>();
     @NotNull
     private final Set<FqName> unresolvedCache = new HashSet<FqName>();
 
@@ -90,25 +84,13 @@ public final class JavaNamespaceResolver {
     }
 
     @Nullable
-    public NamespaceDescriptor resolveNamespace(@NotNull FqName qualifiedName, @NotNull DescriptorSearchRule searchRule) {
-        if (searchRule == INCLUDE_KOTLIN_SOURCES) {
-            NamespaceDescriptor kotlinNamespaceDescriptor = cache.getPackageResolvedFromSource(qualifiedName);
-            if (kotlinNamespaceDescriptor != null) {
-                return kotlinNamespaceDescriptor;
-            }
-        }
-
+    private PackageFragmentDescriptor createPackageFragment(@NotNull FqName qualifiedName) {
         if (unresolvedCache.contains(qualifiedName)) {
             return null;
         }
-        JetScope scope = resolvedNamespaceCache.get(qualifiedName);
+        JetScope scope = packageFragments.get(qualifiedName);
         if (scope != null) {
-            return (NamespaceDescriptor) scope.getContainingDeclaration();
-        }
-
-        NamespaceDescriptorParent parentNs = resolveParentNamespace(qualifiedName);
-        if (parentNs == null) {
-            return null;
+            return (PackageFragmentDescriptor) scope.getContainingDeclaration();
         }
 
         JavaNamespaceDescriptor javaNamespaceDescriptor = new JavaNamespaceDescriptor(
@@ -117,37 +99,21 @@ public final class JavaNamespaceResolver {
                 qualifiedName
         );
 
-        JetScope newScope = createNamespaceScope(qualifiedName, javaNamespaceDescriptor, true);
-        if (newScope == null) {
+        JetScope namespaceScope = createPackageScope(qualifiedName, javaNamespaceDescriptor, true);
+        cache(qualifiedName, namespaceScope);
+        if (namespaceScope == null) {
             return null;
         }
 
-        javaNamespaceDescriptor.setMemberScope(newScope);
+        javaNamespaceDescriptor.setMemberScope(namespaceScope);
 
         return javaNamespaceDescriptor;
     }
 
     @Nullable
-    private NamespaceDescriptorParent resolveParentNamespace(@NotNull FqName fqName) {
-        if (fqName.isRoot()) {
-            return FAKE_ROOT_MODULE;
-        }
-        else {
-            return resolveNamespace(fqName.parent(), INCLUDE_KOTLIN_SOURCES);
-        }
-    }
-
-    @Nullable
-    private JetScope createNamespaceScope(@NotNull FqName fqName, @NotNull NamespaceDescriptor namespaceDescriptor, boolean record) {
-        JetScope namespaceScope = doCreateNamespaceScope(fqName, namespaceDescriptor, record);
-        cache(fqName, namespaceScope);
-        return namespaceScope;
-    }
-
-    @Nullable
-    private JetScope doCreateNamespaceScope(
+    private JetScope createPackageScope(
             @NotNull FqName fqName,
-            @NotNull NamespaceDescriptor namespaceDescriptor,
+            @NotNull PackageFragmentDescriptor packageFragment,
             boolean record
     ) {
         JavaPackage javaPackage = javaClassFinder.findPackage(fqName);
@@ -155,11 +121,11 @@ public final class JavaNamespaceResolver {
             FqName packageClassFqName = PackageClassUtils.getPackageClassFqName(fqName);
             KotlinJvmBinaryClass kotlinClass = kotlinClassFinder.find(packageClassFqName);
 
-            cache.recordProperNamespace(namespaceDescriptor);
+            cache.recordProperPackage(packageFragment);
 
             if (kotlinClass != null) {
                 // TODO 1
-                //JetScope kotlinPackageScope = deserializedDescriptorResolver.createKotlinPackageScope(namespaceDescriptor, kotlinClass);
+                //JetScope kotlinPackageScope = deserializedDescriptorResolver.createKotlinPackageScope(packageFragment, kotlinClass);
                 //if (kotlinPackageScope != null) {
                 //    return kotlinPackageScope;
                 //}
@@ -168,10 +134,10 @@ public final class JavaNamespaceResolver {
 
             // Otherwise (if psiClass is null or doesn't have a supported Kotlin annotation), it's a Java class and the package is empty
             if (record) {
-                cache.recordPackage(javaPackage, namespaceDescriptor);
+                cache.recordPackage(javaPackage, packageFragment);
             }
 
-            return new JavaPackageScope(namespaceDescriptor, javaPackage, fqName, memberResolver);
+            return new JavaPackageScope(packageFragment, javaPackage, fqName, memberResolver);
         }
 
         JavaClass javaClass = javaClassFinder.findClass(fqName);
@@ -186,13 +152,13 @@ public final class JavaNamespaceResolver {
             return null;
         }
 
-        cache.recordClassStaticMembersNamespace(namespaceDescriptor);
+        cache.recordClassStaticMembersNamespace(packageFragment);
 
         if (record) {
-            cache.recordPackage(javaClass, namespaceDescriptor);
+            cache.recordPackage(javaClass, packageFragment);
         }
 
-        return new JavaClassStaticMembersScope(namespaceDescriptor, fqName, javaClass, memberResolver);
+        return new JavaClassStaticMembersScope(packageFragment, javaClass, memberResolver);
     }
 
     private void cache(@NotNull FqName fqName, @Nullable JetScope packageScope) {
@@ -200,25 +166,10 @@ public final class JavaNamespaceResolver {
             unresolvedCache.add(fqName);
             return;
         }
-        JetScope oldValue = resolvedNamespaceCache.put(fqName, packageScope);
+        JetScope oldValue = packageFragments.put(fqName, packageScope);
         if (oldValue != null) {
             throw new IllegalStateException("rewrite at " + fqName);
         }
-    }
-
-    @Nullable
-    public JetScope getJavaPackageScopeForExistingNamespaceDescriptor(@NotNull NamespaceDescriptor namespaceDescriptor) {
-        FqName fqName = DescriptorUtils.getFQName(namespaceDescriptor).toSafe();
-        if (unresolvedCache.contains(fqName)) {
-            throw new IllegalStateException(
-                    "This means that we are trying to create a Java package, but have a package with the same FQN defined in Kotlin: " +
-                    fqName);
-        }
-        JetScope alreadyResolvedScope = resolvedNamespaceCache.get(fqName);
-        if (alreadyResolvedScope != null) {
-            return alreadyResolvedScope;
-        }
-        return createNamespaceScope(fqName, namespaceDescriptor, false);
     }
 
     private static boolean hasStaticMembers(@NotNull JavaClass javaClass) {
@@ -260,5 +211,17 @@ public final class JavaNamespaceResolver {
         }
 
         return result;
+    }
+
+    @NotNull
+    @Override
+    public List<PackageFragmentDescriptor> getPackageFragments(@NotNull FqName fqName) {
+        return null;  //TODO
+    }
+
+    @NotNull
+    @Override
+    public Collection<FqName> getSubPackagesOf(@NotNull FqName fqName) {
+        return null;  //TODO
     }
 }

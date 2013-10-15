@@ -30,7 +30,7 @@ import java.util.Set;
 
 public class JavaMemberResolver {
     private JavaClassResolver classResolver;
-    private JavaNamespaceResolver namespaceResolver;
+    private JavaPackageFragmentProvider namespaceResolver;
     private JavaFunctionResolver functionResolver;
     private JavaPropertyResolver propertyResolver;
     private JavaConstructorResolver constructorResolver;
@@ -41,7 +41,7 @@ public class JavaMemberResolver {
     }
 
     @Inject
-    public void setNamespaceResolver(JavaNamespaceResolver namespaceResolver) {
+    public void setNamespaceResolver(JavaPackageFragmentProvider namespaceResolver) {
         this.namespaceResolver = namespaceResolver;
     }
 

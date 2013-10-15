@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.NamespaceDescriptor;
 import org.jetbrains.jet.lang.resolve.java.resolver.JavaClassResolver;
-import org.jetbrains.jet.lang.resolve.java.resolver.JavaNamespaceResolver;
+import org.jetbrains.jet.lang.resolve.java.resolver.JavaPackageFragmentProvider;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -35,7 +35,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     public static final Name JAVA_ROOT = Name.special("<java_root>");
 
     private JavaClassResolver classResolver;
-    private JavaNamespaceResolver namespaceResolver;
+    private JavaPackageFragmentProvider namespaceResolver;
 
     @Inject
     public void setClassResolver(JavaClassResolver classResolver) {
@@ -43,7 +43,7 @@ public class JavaDescriptorResolver implements DependencyClassByQualifiedNameRes
     }
 
     @Inject
-    public void setNamespaceResolver(JavaNamespaceResolver namespaceResolver) {
+    public void setNamespaceResolver(JavaPackageFragmentProvider namespaceResolver) {
         this.namespaceResolver = namespaceResolver;
     }
 
