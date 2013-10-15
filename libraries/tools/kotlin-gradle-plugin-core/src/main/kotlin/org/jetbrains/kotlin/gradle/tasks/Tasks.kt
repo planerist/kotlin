@@ -99,7 +99,7 @@ public open class KotlinCompile(): AbstractCompile() {
         if (StringUtils.isEmpty(kotlinOptions.classpath)) {
             val existingClasspathEntries =  getClasspath().filter(KSpec<File?>({ it != null && it.exists() }))
             val effectiveClassPath = (javaSrcRoots + existingClasspathEntries).makeString(File.pathSeparator)
-            args.setClasspath(effectiveClassPath)
+            args.classpath = effectiveClassPath
         }
 
         args.outputDir = if (StringUtils.isEmpty(kotlinOptions.outputDir)) { kotlinDestinationDir?.getPath() } else { kotlinOptions.outputDir }
