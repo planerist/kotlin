@@ -22,6 +22,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiElement;
@@ -31,18 +32,14 @@ import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
-import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.OverridingUtil;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.renderer.DescriptorRenderer;
 
 import javax.swing.*;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor.Kind.*;
 import static org.jetbrains.jet.lang.resolve.BindingContextUtils.*;
@@ -107,7 +104,7 @@ public final class JetChangeSignature {
     }
 
     public void run() {
-        assert functionDescriptor.getKind() != SYNTHESIZED : "Change signature refactoring should not be called for synthesized member.";
+        assert functionDescriptor.getKind() != SYNTHESIZED : "Change signature refactoring should not be called for synthesized member";
         Collection<FunctionDescriptor> mostShallowSuperDeclarations = getMostShallowSuperDeclarations();
         Set<FunctionDescriptor> deepestSuperDeclarations = getDeepestSuperDeclarations();
         Collection<FunctionDescriptor> deepestWithoutMostShallowSuperDeclarations =
@@ -212,30 +209,41 @@ public final class JetChangeSignature {
 
     @Nullable
     private JetChangeSignatureDialog createChangeSignatureDialog(@NotNull Collection<FunctionDescriptor> descriptorsForSignatureChange) {
-        PsiElement declaration = getDeclaration(descriptorsForSignatureChange);
-        if (declaration == null) {
+        FunctionDescriptor baseDescriptor = preferContainedInClass(descriptorsForSignatureChange);
+        PsiElement functionDeclaration = callableDescriptorToDeclaration(bindingContext, baseDescriptor);
+        if (functionDeclaration == null) {
+            LOG.error("Could not find declaration for " + baseDescriptor);
             return null;
         }
-        JetChangeSignatureData changeSignatureData = new JetChangeSignatureData(functionDescriptor, declaration,
+        JetChangeSignatureData changeSignatureData = new JetChangeSignatureData(baseDescriptor, functionDeclaration,
                                                                                 bindingContext, descriptorsForSignatureChange);
         configuration.configure(changeSignatureData, bindingContext);
         return new JetChangeSignatureDialog(project, changeSignatureData, defaultValueContext, commandName);
     }
 
 
-    @Nullable
-    private PsiElement getDeclaration(@NotNull Collection<FunctionDescriptor> descriptorsForSignatureChange) {
-        FunctionDescriptor descriptor = findBestDescriptor(descriptorsForSignatureChange);
-        PsiElement functionDeclaration = callableDescriptorToDeclaration(bindingContext, descriptor);
-        if (functionDeclaration == null) {
-            LOG.error("Could not find declaration for " + descriptor);
-        }
-        return functionDeclaration;
-    }
-
     @NotNull
-    private static FunctionDescriptor findBestDescriptor(@NotNull Collection<FunctionDescriptor> descriptorsForSignatureChange) {
-        return descriptorsForSignatureChange.iterator().next();
+    private static FunctionDescriptor preferContainedInClass(@NotNull Collection<FunctionDescriptor> descriptorsForSignatureChange) {
+        List<FunctionDescriptor> orderedDescriptors = new ArrayList<FunctionDescriptor>(descriptorsForSignatureChange);
+        List<DeclarationDescriptor> orderedContainers =
+                ContainerUtil.map(orderedDescriptors, new Function<FunctionDescriptor, DeclarationDescriptor>() {
+            @Override
+            public DeclarationDescriptor fun(FunctionDescriptor descriptor) {
+                return descriptor.getContainingDeclaration();
+            }
+        });
+        DeclarationDescriptor containingClass = ContainerUtil.find(orderedContainers, new Condition<DeclarationDescriptor>() {
+            @Override
+            public boolean value(DeclarationDescriptor descriptor) {
+                return descriptor instanceof ClassDescriptor && ((ClassDescriptor) descriptor).getKind() != ClassKind.TRAIT;
+            }
+        });
+        if (containingClass != null) {
+            return orderedDescriptors.get(orderedContainers.indexOf(containingClass));
+        } else {
+            //random descriptor
+            return descriptorsForSignatureChange.iterator().next();
+        }
     }
 
     @NotNull
