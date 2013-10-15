@@ -31,7 +31,7 @@ import org.jetbrains.jet.cli.common.KotlinVersion;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
-import org.jetbrains.jet.cli.common.arguments.CompilerArguments;
+import org.jetbrains.jet.cli.common.arguments.CommonCompilerArguments;
 import org.jetbrains.jet.cli.common.arguments.K2JVMCompilerArguments;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
 
@@ -172,7 +172,7 @@ public abstract class KotlinCompileMojoBase extends AbstractMojo {
             }
         }
 
-        final CompilerArguments arguments = createCompilerArguments();
+        final CommonCompilerArguments arguments = createCompilerArguments();
         configureCompilerArguments(arguments);
 
         final CLICompiler compiler = createCompiler();
@@ -210,7 +210,7 @@ public abstract class KotlinCompileMojoBase extends AbstractMojo {
         }
     }
 
-    private void printCompilerArgumentsIfDebugEnabled(CompilerArguments arguments, CLICompiler compiler) {
+    private void printCompilerArgumentsIfDebugEnabled(CommonCompilerArguments arguments, CLICompiler compiler) {
         if (getLog().isDebugEnabled()) {
             getLog().debug("Invoking compiler " + compiler + " with arguments:");
             try {
@@ -247,14 +247,14 @@ public abstract class KotlinCompileMojoBase extends AbstractMojo {
      * Derived classes can create custom compiler argument implementations
      * such as for KDoc
      */
-    protected CompilerArguments createCompilerArguments() {
+    protected CommonCompilerArguments createCompilerArguments() {
         return new K2JVMCompilerArguments();
     }
 
     /**
      * Derived classes can register custom plugins or configurations
      */
-    protected abstract void configureCompilerArguments(CompilerArguments arguments) throws MojoExecutionException;
+    protected abstract void configureCompilerArguments(CommonCompilerArguments arguments) throws MojoExecutionException;
 
     protected void configureBaseCompilerArguments(Log log, K2JVMCompilerArguments arguments, String module,
                                                   List<String> sources, List<String> classpath, String output) throws MojoExecutionException {
