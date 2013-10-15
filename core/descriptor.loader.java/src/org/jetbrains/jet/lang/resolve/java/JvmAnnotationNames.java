@@ -30,6 +30,8 @@ public final class JvmAnnotationNames {
 
     public static final FqName KOTLIN_PACKAGE_FRAGMENT = fqNameByClass(KotlinPackageFragment.class);
 
+    public static final FqName KOTLIN_TRAIT_IMPL = /* TODO after bootstrap: fqNameByClass(KotlinTraitImpl.class); */ new FqName("jet.KotlinTraitImpl");
+
     public static final String ABI_VERSION_FIELD_NAME = "abiVersion";
 
     public static final String DATA_FIELD_NAME = "data";

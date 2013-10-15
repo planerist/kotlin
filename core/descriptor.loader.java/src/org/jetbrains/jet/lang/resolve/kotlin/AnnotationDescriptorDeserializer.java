@@ -46,6 +46,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isClassObject;
+import static org.jetbrains.jet.lang.resolve.DescriptorUtils.isTrait;
 import static org.jetbrains.jet.lang.resolve.java.DescriptorSearchRule.IGNORE_KOTLIN_SOURCES;
 import static org.jetbrains.jet.lang.resolve.kotlin.DeserializedResolverUtils.kotlinFqNameToJavaFqName;
 import static org.jetbrains.jet.lang.resolve.kotlin.DeserializedResolverUtils.naiveKotlinFqName;
@@ -230,7 +232,7 @@ public class AnnotationDescriptorDeserializer implements AnnotationDeserializer 
         MemberSignature signature = getCallableSignature(proto, nameResolver, kind);
         if (signature == null) return Collections.emptyList();
 
-        KotlinJvmBinaryClass kotlinClass = findClassWithMemberAnnotations(container, proto, nameResolver);
+        KotlinJvmBinaryClass kotlinClass = findClassWithMemberAnnotations(container, proto, nameResolver, kind);
         if (kotlinClass == null) {
             errorReporter.reportAnnotationLoadingError("Kotlin class for loading member annotations is not found: " + container, null);
             return Collections.emptyList();
@@ -244,7 +246,8 @@ public class AnnotationDescriptorDeserializer implements AnnotationDeserializer 
     private KotlinJvmBinaryClass findClassWithMemberAnnotations(
             @NotNull ClassOrNamespaceDescriptor container,
             @NotNull ProtoBuf.Callable proto,
-            @NotNull NameResolver nameResolver
+            @NotNull NameResolver nameResolver,
+            @NotNull AnnotatedCallableKind kind
     ) {
         if (container instanceof NamespaceDescriptor) {
             Name name = loadSrcClassName(proto, nameResolver);
@@ -253,11 +256,13 @@ public class AnnotationDescriptorDeserializer implements AnnotationDeserializer 
             }
             return null;
         }
-        else if (container instanceof ClassDescriptor && ((ClassDescriptor) container).getKind() == ClassKind.CLASS_OBJECT) {
+        else if (isClassObject(container) && isStaticFieldInOuter(proto)) {
             // Backing fields of properties of a class object are generated in the outer class
-            if (isStaticFieldInOuter(proto)) {
-                return findKotlinClassByDescriptor((ClassOrNamespaceDescriptor) container.getContainingDeclaration());
-            }
+            return findKotlinClassByDescriptor((ClassOrNamespaceDescriptor) container.getContainingDeclaration());
+        }
+        else if (isTrait(container) && kind == AnnotatedCallableKind.PROPERTY) {
+            // TODO: serialize to JavaPropertySignature
+            return kotlinClassFinder.find(new FqName(kotlinFqNameToJavaFqName(naiveKotlinFqName((ClassDescriptor) container)).asString() + "$$TImpl"));
         }
 
         return findKotlinClassByDescriptor(container);

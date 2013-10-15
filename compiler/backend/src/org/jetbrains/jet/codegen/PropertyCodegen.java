@@ -142,11 +142,11 @@ public class PropertyCodegen extends GenerationStateAware {
             AnnotationCodegen.forField(fieldVisitor, typeMapper).genAnnotations(propertyDescriptor);
         }
         else if (!propertyDescriptor.getAnnotations().isEmpty()) {
+            Method method = getSyntheticMethodSignature(typeMapper, propertyDescriptor);
             if (!isTrait(context.getContextDescriptor())) {
-                Method method = getSyntheticMethodSignature(typeMapper, propertyDescriptor);
                 generateSyntheticMethodForAnnotatedProperty(v, typeMapper, propertyDescriptor, method);
-                v.getMemberMap().recordSyntheticMethodOfProperty(propertyDescriptor, method);
             }
+            v.getMemberMap().recordSyntheticMethodOfProperty(propertyDescriptor, method);
         }
     }
 

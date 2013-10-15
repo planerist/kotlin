@@ -216,6 +216,11 @@ public class LazyResolveNamespaceComparingTestGenerated extends AbstractLazyReso
                     doTestCheckingPrimaryConstructorsAndAccessors("compiler/testData/loadKotlin/annotations/propertiesWithoutBackingFields/TopLevel.kt");
                 }
                 
+                @TestMetadata("Trait.kt")
+                public void testTrait() throws Exception {
+                    doTestCheckingPrimaryConstructorsAndAccessors("compiler/testData/loadKotlin/annotations/propertiesWithoutBackingFields/Trait.kt");
+                }
+                
             }
             
             public static Test innerSuite() {

@@ -214,6 +214,11 @@ public class LoadCompiledKotlinTestGenerated extends AbstractLoadCompiledKotlinT
                 doTestWithAccessors("compiler/testData/loadKotlin/annotations/propertiesWithoutBackingFields/TopLevel.kt");
             }
             
+            @TestMetadata("Trait.kt")
+            public void testTrait() throws Exception {
+                doTestWithAccessors("compiler/testData/loadKotlin/annotations/propertiesWithoutBackingFields/Trait.kt");
+            }
+            
         }
         
         public static Test innerSuite() {
