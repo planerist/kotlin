@@ -77,11 +77,13 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments> {
             return INTERNAL_ERROR;
         }
 
+        List<String> argumentsSourceDirs = arguments.getSourceDirs();
         if (!arguments.script &&
             arguments.module == null &&
             arguments.src == null &&
-            arguments.freeArgs.isEmpty()
-        ) {
+            arguments.freeArgs.isEmpty() &&
+            (argumentsSourceDirs == null || argumentsSourceDirs.size() == 0)) {
+
             ReplFromTerminal.run(rootDisposable, configuration);
             return ExitCode.OK;
         }
@@ -91,13 +93,21 @@ public class K2JVMCompiler extends CLICompiler<K2JVMCompilerArguments> {
             configuration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, arguments.freeArgs.get(0));
         }
         else {
-            if (arguments.src != null) {
-                List<String> sourcePathsSplitByPathSeparator
-                        = Arrays.asList(arguments.src.split(StringUtil.escapeToRegexp(File.pathSeparator)));
-                configuration.addAll(CommonConfigurationKeys.SOURCE_ROOTS_KEY, sourcePathsSplitByPathSeparator);
+            // TODO ideally we'd unify to just having a single field that supports multiple files/dirs
+            if (arguments.getSourceDirs() != null) {
+                for (String source : arguments.getSourceDirs()) {
+                    configuration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, source);
+                }
             }
-            for (String freeArg : arguments.freeArgs) {
-                configuration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, freeArg);
+            else {
+                if (arguments.src != null) {
+                    List<String> sourcePathsSplitByPathSeparator
+                            = Arrays.asList(arguments.src.split(StringUtil.escapeToRegexp(File.pathSeparator)));
+                    configuration.addAll(CommonConfigurationKeys.SOURCE_ROOTS_KEY, sourcePathsSplitByPathSeparator);
+                }
+                for (String freeArg : arguments.freeArgs) {
+                    configuration.add(CommonConfigurationKeys.SOURCE_ROOTS_KEY, freeArg);
+                }
             }
         }
 

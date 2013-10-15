@@ -31,9 +31,9 @@ class KDocTest {
         sourceDirs.add("../../kunit/src/main/kotlin")
         sourceDirs.add("../../kotlin-jdbc/src/main/kotlin")
         args.setSourceDirs(sourceDirs)
-        args.setOutputDir("target/classes-stdlib")
-        args.setNoStdlib(true)
-        args.setClasspath("../runtime/target/kotlin-runtime-0.1-SNAPSHOT.jar${File.pathSeparator}../../lib/junit-4.9.jar")
+        args.outputDir = "target/classes-stdlib"
+        args.noStdlib = true
+        args.classpath = "../runtime/target/kotlin-runtime-0.1-SNAPSHOT.jar${File.pathSeparator}../../lib/junit-4.9.jar"
 
         val config = args.docConfig
         config.docOutputDir = outDir.toString()

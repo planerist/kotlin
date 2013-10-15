@@ -19,11 +19,24 @@ package org.jetbrains.jet.cli.common.arguments;
 
 import com.sampullara.cli.Argument;
 
+import java.util.List;
+
 /**
  * Command line arguments for the {@link K2JVMCompiler}
  */
 @SuppressWarnings("UnusedDeclaration")
 public class K2JVMCompilerArguments extends CommonCompilerArguments {
+    // TODO ideally we'd unify this with 'src' to just having a single field that supports multiple files/dirs
+    private List<String> sourceDirs;
+
+    public List<String> getSourceDirs() {
+        return sourceDirs;
+    }
+
+    public void setSourceDirs(List<String> sourceDirs) {
+        this.sourceDirs = sourceDirs;
+    }
+
     @Argument(value = "jar", description = "jar file name")
     public String jar;
 
