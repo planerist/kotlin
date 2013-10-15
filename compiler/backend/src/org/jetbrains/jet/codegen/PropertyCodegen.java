@@ -141,35 +141,40 @@ public class PropertyCodegen extends GenerationStateAware {
 
             AnnotationCodegen.forField(fieldVisitor, typeMapper).genAnnotations(propertyDescriptor);
         }
-        else if (!isTrait(context.getContextDescriptor())) {
-            generateSyntheticMethodForAnnotatedPropertyIfNeeded(v, typeMapper, propertyDescriptor);
+        else if (!propertyDescriptor.getAnnotations().isEmpty()) {
+            if (!isTrait(context.getContextDescriptor())) {
+                Method method = getSyntheticMethodSignature(typeMapper, propertyDescriptor);
+                generateSyntheticMethodForAnnotatedProperty(v, typeMapper, propertyDescriptor, method);
+                v.getMemberMap().recordSyntheticMethodOfProperty(propertyDescriptor, method);
+            }
         }
     }
 
-    public static void generateSyntheticMethodForAnnotatedPropertyIfNeeded(
+    // Annotations on properties without backing fields are stored in bytecode on an empty synthetic method. This way they're still
+    // accessible via reflection, and 'deprecated' and 'private' flags prevent this method from being called accidentally
+    public static void generateSyntheticMethodForAnnotatedProperty(
             @NotNull ClassBuilder v,
             @NotNull JetTypeMapper typeMapper,
-            @NotNull PropertyDescriptor propertyDescriptor
+            @NotNull PropertyDescriptor propertyDescriptor,
+            @NotNull Method method
     ) {
-        if (propertyDescriptor.getAnnotations().isEmpty()) return;
-
-        // Annotations on properties without backing fields are stored in bytecode on an empty synthetic method. This way they're still
-        // accessible via reflection, and 'deprecated' and 'private' flags prevent this method from being called accidentally
-        ReceiverParameterDescriptor receiver = propertyDescriptor.getReceiverParameter();
-        Type receiverAsmType = receiver == null ? null : typeMapper.mapType(receiver.getType());
-        Method method = JvmAbi.getSyntheticMethodSignatureForAnnotatedProperty(propertyDescriptor.getName(), receiverAsmType);
-
         MethodVisitor mv = v.newMethod(null,
                                        ACC_DEPRECATED | ACC_FINAL | ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC,
                                        method.getName(),
                                        method.getDescriptor(),
                                        null,
                                        null);
-        v.getMemberMap().recordSyntheticMethodOfProperty(propertyDescriptor, method);
         AnnotationCodegen.forMethod(mv, typeMapper).genAnnotations(propertyDescriptor);
         mv.visitCode();
         mv.visitInsn(Opcodes.RETURN);
         mv.visitEnd();
+    }
+
+    @NotNull
+    public static Method getSyntheticMethodSignature(@NotNull JetTypeMapper typeMapper, @NotNull PropertyDescriptor propertyDescriptor) {
+        ReceiverParameterDescriptor receiver = propertyDescriptor.getReceiverParameter();
+        Type receiverAsmType = receiver == null ? null : typeMapper.mapType(receiver.getType());
+        return JvmAbi.getSyntheticMethodSignatureForAnnotatedProperty(propertyDescriptor.getName(), receiverAsmType);
     }
 
     private FieldVisitor generateBackingField(JetNamedDeclaration element, PropertyDescriptor propertyDescriptor, boolean isDelegate, JetType jetType, Object defaultValue) {
