@@ -107,6 +107,7 @@ public final class JetChangeSignature {
     }
 
     public void run() {
+        assert functionDescriptor.getKind() != SYNTHESIZED : "Change signature refactoring should not be called for synthesized member.";
         Collection<FunctionDescriptor> mostShallowSuperDeclarations = getMostShallowSuperDeclarations();
         Set<FunctionDescriptor> deepestSuperDeclarations = getDeepestSuperDeclarations();
         Collection<FunctionDescriptor> deepestWithoutMostShallowSuperDeclarations =
@@ -243,7 +244,6 @@ public final class JetChangeSignature {
         if (kind == DELEGATION || kind == FAKE_OVERRIDE) {
             return getDirectlyOverriddenDeclarations(functionDescriptor);
         }
-        //TODO: synthesized?
         assert kind == DECLARATION : "Unexpected callable kind: " + kind;
         return Collections.singleton(functionDescriptor);
     }
